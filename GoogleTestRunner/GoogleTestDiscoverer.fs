@@ -24,7 +24,8 @@ module DiscovererUtils =
         let parseSingleTest (currentSuite, result) (currentLine:string) =
             let currentLine = currentLine.Trim([|'.'; '\n'; '\r'|])
             if currentLine.StartsWith("  ") then
-                currentSuite, (currentSuite, currentLine.Substring(2)) :: result
+                let caseName = currentLine.Split([|' '|], StringSplitOptions.RemoveEmptyEntries).[0]
+                currentSuite, (currentSuite, caseName) :: result
             else
                 let stripGtest170TypeParameter =
                     let split = currentLine.Split([|".  # TypeParam"|], StringSplitOptions.RemoveEmptyEntries)
@@ -33,7 +34,11 @@ module DiscovererUtils =
         snd (tests |> List.fold parseSingleTest ("", List.empty)) |> Array.ofList
         
     /// Gets the GoogleTest function name format!
-    let googleTestCombinedName (testSuite, testMethod) = sprintf "%s_%s_Test%s" testSuite testMethod Constants.gtestTestBodySignature
+    let googleTestCombinedName (testSuite: string, testMethod: string) = 
+        let testSuiteName = testSuite.Split([|'/'|], StringSplitOptions.RemoveEmptyEntries) :> seq<string> |> Seq.last
+        let testMethodName = testMethod.Split([|'/'|], StringSplitOptions.RemoveEmptyEntries).[0]
+        sprintf "%s_%s_Test%s" testSuiteName testMethodName Constants.gtestTestBodySignature
+
     let getSourceFileLocations executable logger (testcases:(string * string) []) =
         let symbols = testcases |> Array.Parallel.map googleTestCombinedName
         let symbolFilterString = sprintf "*%s" Constants.gtestTestBodySignature
