@@ -54,12 +54,17 @@ module DiscovererUtils =
             match symbols |> Array.tryFind(fun ((f:string), (a, b)) -> f.Contains(cn)) with
             | None -> sprintf "Couldn't locate %s" cn, -12
             | Some(info) -> snd info
-        TestCase(dn,
+        let category = testSuite.Split([|'/'|], StringSplitOptions.RemoveEmptyEntries) :> seq<string> |> Seq.last
+        let testCase = 
+            TestCase(
+                dn,
                 Uri(Constants.identifierUri),
                 executable,
                 DisplayName = dn,
                 CodeFilePath = fst sourceInfo,
                 LineNumber = snd sourceInfo)
+        testCase.Traits.Add(Trait("Category", category))
+        testCase
 
     let getTestsFromExecutable (logger:IMessageLogger) executable =
         let gtestTestList = ProcessUtil.getOutputOfCommand(String.Empty, executable, Constants.gtestListTests, true)
